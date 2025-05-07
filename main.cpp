@@ -28,7 +28,7 @@ int main(int argc, char* argv[]) {
 				size_t start = N >> 1;
 				{
 					size_t child;
-					std::chrono::milliseconds est_delay(Tape::move_delay);
+					std::chrono::milliseconds est_delay((Tape::move_delay + Tape::rw_delay)*2);
 					bool sup;
 					for (i = 1ULL; i < start + 2ULL; ++i) {
 						itape.forward();
@@ -40,6 +40,7 @@ int main(int argc, char* argv[]) {
 							elems[i] = itape.get();
 						}
 						});
+					t.detach();
 					--N;
 					do {
 						sup = true;
@@ -48,8 +49,8 @@ int main(int argc, char* argv[]) {
 							std::this_thread::sleep_for(est_delay);
 						}
 						while (sup && ind < (N >> 1)) {
-							child = N - (ind << 1) - 2U;
-							if (elems[child] < elems[child + 1U]) {
+							child = N - (ind << 1) - 2ULL;
+							if (elems[child] < elems[child + 1ULL]) {
 								++child;
 							}
 							if ((sup = elems[N - ind] < elems[child])) {
@@ -57,17 +58,17 @@ int main(int argc, char* argv[]) {
 								ind = N - child;
 							}
 						}
-						if (sup && ind == ((N - 1U) >> 1) && elems[N - ind] < elems[0]) {
+						if (sup && ind == ((N - 1ULL) >> 1) && elems[N - ind] < elems[0]) {
 							std::swap(elems[N - ind], elems[0]);
 						}
-					} while (start > 0U);
-					start = (N + 1U) >> 1;
+					} while (start > 0ULL);
+					start = (N + 1ULL) >> 1;
 					do {
 						sup = true;
 						ind = --start;
 						while (sup && ind < (N >> 1)) {
-							child = (ind << 1) + 2U;
-							if (elems[child - 1U] < elems[child]) {
+							child = (ind << 1) + 2ULL;
+							if (elems[child - 1ULL] < elems[child]) {
 								--child;
 							}
 							if ((sup = elems[child] < elems[ind])) {
@@ -75,11 +76,11 @@ int main(int argc, char* argv[]) {
 								ind = child;
 							}
 						}
-					} while (start > 0U);
+					} while (start > 0ULL);
 				}
 
-				for (start = 2U; start < N; ++start) {//insertion sort with binary search.
-					if (elems[start] < elems[start - 1U]) {
+				for (start = 2ULL; start < N; ++start) {//insertion sort with binary search.
+					if (elems[start] < elems[start - 1ULL]) {
 						int tmp = elems[start];
 						i = 0ULL;
 						ind = start - 1ULL;
