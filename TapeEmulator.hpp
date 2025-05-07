@@ -40,8 +40,9 @@ public:
 	void write() {
 		std::ofstream outFile(filename);
 		if (outFile.is_open()) {
-			for (size_t i = 0ULL; i < N; ++i) {
-				outFile << elements[i];
+			outFile << elements[0];
+			for (size_t i = 1ULL; i < N; ++i) {
+				outFile << ' ' << elements[i];
 			}
 			outFile.close();
 		}
@@ -58,7 +59,7 @@ public:
 	void forward(size_t n = 1ULL) {
 		if ((n %= N) != 0ULL) {
 			head = (N - head <= n) ? n - (N - head) : head + n;
-			if (n == 1ULL) {
+			if (n == 1ULL || n == N - 1ULL) {
 				std::this_thread::sleep_for(move_delay);
 			}
 			else {
@@ -69,7 +70,7 @@ public:
 	void backward(size_t n = 1ULL) {
 		if ((n %= N) != 0ULL) {
 			head = (head < n) ? head + (N - n) : head - n;
-			if (n == 1ULL) {
+			if (n == 1ULL || n == N - 1ULL) {
 				std::this_thread::sleep_for(move_delay);
 			}
 			else {

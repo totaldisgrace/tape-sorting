@@ -13,7 +13,7 @@ int main(int argc, char* argv[]) {
 			if (N == 0ULL) {
 				throw std::invalid_argument("Empty tape.");
 			}
-			if (M < 96ULL) { throw std::exception("Not enough RAM."); };
+			if (M < 64ULL) { throw std::exception("Not enough RAM."); };
 			Tape itape(argv[1], N);
 			Tape otape(argv[2], N);
 			itape.read();
@@ -104,48 +104,69 @@ int main(int argc, char* argv[]) {
 			else {
 				char f1[] = "tmp/tape1.txt\0tmp/tape2.txt\0tmp/tape3.txt";
 				Tape t1(f1, N);
-				Tape t2(&f1[14], N);
+				Tape t2(f1 + 14, N);
 				size_t cnt = 0ULL;
+				size_t i = 1ULL;
 				int base = 1;
 				int j = itape.get();
-				bool sup = ((j & base) == 0);
-				if (sup) {
+				if ((j & base) == 0) {
 					t1.put(j);
+					do {
+						itape.forward();
+						j = itape.get();
+						if ((j & base) == 0) {
+							t1.forward();
+							t1.put(j);
+						}
+						else {
+							t2.put(j);
+							++cnt;
+						}
+						++i;
+					} while (i < N && cnt == 0ULL);
 				}
 				else {
 					t2.put(j);
 					++cnt;
+					do {
+						itape.forward();
+						j = itape.get();
+						if ((j & base) == 0) {
+							t1.put(j);
+						}
+						else {
+							t2.forward();
+							t2.put(j);
+							++cnt;
+						}
+						++i;
+					} while (i < N && cnt == i);
 				}
-				for (size_t i = 1ULL; i < N; ++i) {
+				for (; i < N; ++i) {
 					itape.forward();
 					j = itape.get();
 					if ((j & base) == 0) {
-						if (sup) {
-							t1.forward();
-						}
+						t1.forward();
 						t1.put(j);
-						sup = true;
 					}
 					else {
-						if (cnt > 0ULL) {
-							t2.forward();
-						}
+						t2.forward();
 						t2.put(j);
 						++cnt;
 					}
 				}
-				itape.change(&f1[28]);
+				itape.change(f1 + 28);
 				Tape* from;
 				Tape* a;
 				Tape* b = &itape;
-				if (sup) {
+				if (cnt != N) {
 					from = &t1;
 					a = &t2;
 					if (cnt > 0ULL) {
 						t2.MTF();
 						t1.forward();
 						t1.put(t2.get());
-						for (size_t i = 1ULL; i < cnt; ++i) {
+						for (i = 1ULL; i < cnt; ++i) {
 							t1.forward();
 							t2.forward();
 							t1.put(t2.get());
@@ -158,31 +179,61 @@ int main(int argc, char* argv[]) {
 				}
 				for (base <<= 1; base > 0; base <<= 1) {
 					cnt = 0ULL;
-					sup = false;
-					for (size_t i = 0ULL; i < N; ++i) {
+					i = 1ULL;
+					from->forward();
+					j = from->get();
+					if ((j & base) == 0) {
+						a->put(j);
+						do {
+							from->forward();
+							j = from->get();
+							if ((j & base) == 0) {
+								a->forward();
+								a->put(j);
+							}
+							else {
+								b->put(j);
+								++cnt;
+							}
+							++i;
+						} while (i < N && cnt == 0ULL);
+					}
+					else {
+						b->put(j);
+						++cnt;
+						do {
+							from->forward();
+							j = from->get();
+							if ((j & base) == 0) {
+								a->put(j);
+							}
+							else {
+								b->forward();
+								b->put(j);
+								++cnt;
+							}
+							++i;
+						} while (i < N && cnt == i);
+					}
+					for (; i < N; ++i) {
 						from->forward();
 						j = from->get();
 						if ((j & base) == 0) {
-							if (sup) {
-								a->forward();
-							}
+							a->forward();
 							a->put(j);
-							sup = true;
 						}
 						else {
-							if (cnt > 0ULL) {
-								b->forward();
-							}
+							b->forward();
 							b->put(j);
 							++cnt;
 						}
 					}
-					if (sup) {
+					if (cnt != N) {
 						if (cnt > 0ULL) {
-							b->MTF();
+							b->backward(cnt - 1ULL);
 							a->forward();
 							a->put(b->get());
-							for (size_t i = 1ULL; i < cnt; ++i) {
+							for (i = 1ULL; i < cnt; ++i) {
 								a->forward();
 								b->forward();
 								a->put(b->get());
@@ -195,31 +246,57 @@ int main(int argc, char* argv[]) {
 					}
 				}
 				cnt = 0ULL;
-				sup = false;
-				for (size_t i = 0ULL; i < N; ++i) {
-					from->forward();
-					j = from->get();
-					if (j < 0) {
-						if (sup) {
+				i = 1ULL;
+				from->forward();
+				if ((j = from->get()) < 0) {
+					a->put(j);
+					do {
+						from->forward();
+						if ((j = from->get()) < 0) {
 							a->forward();
+							a->put(j);
 						}
+						else {
+							b->put(j);
+							++cnt;
+						}
+						++i;
+					} while (i < N && cnt == 0ULL);
+				}
+				else {
+					b->put(j);
+					++cnt;
+					do {
+						from->forward();
+						if ((j = from->get()) < 0) {
+							a->put(j);
+						}
+						else {
+							b->forward();
+							b->put(j);
+							++cnt;
+						}
+						++i;
+					} while (i < N && cnt == i);
+				}
+				for (; i < N; ++i) {
+					from->forward();
+					if ((j = from->get()) < 0) {
+						a->forward();
 						a->put(j);
-						sup = true;
 					}
 					else {
-						if (cnt > 0ULL) {
-							b->forward();
-						}
+						b->forward();
 						b->put(j);
 						++cnt;
 					}
 				}
-				if (sup) {
+				if (cnt != N) {
 					if (cnt > 0ULL) {
-						b->MTF();
+						b->backward(cnt - 1ULL);
 						a->forward();
 						a->put(b->get());
-						for (size_t i = 1ULL; i < cnt; ++i) {
+						for (i = 1ULL; i < cnt; ++i) {
 							a->forward();
 							b->forward();
 							a->put(b->get());
@@ -232,7 +309,7 @@ int main(int argc, char* argv[]) {
 				}
 				from->forward();
 				otape.put(from->get());
-				for (size_t i = 1ULL; i < N; ++i) {
+				for (i = 1ULL; i < N; ++i) {
 					from->forward();
 					otape.forward();
 					otape.put(from->get());
